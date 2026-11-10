@@ -1,2 +1,30 @@
-# SignVision-ML
-Dataset, préparation des données, entraînement et évaluation du modèle IA.
+# CardioScope · Data / ML
+
+Dataset, préparation des données, entraînement et évaluation du futur modèle. Aucun entraînement ni téléchargement de données n’est exécuté dans cette base.
+
+## Source
+[UCI Heart Disease](https://archive.ics.uci.edu/dataset/45/heart+disease), sous-ensemble Cleveland : fichier `processed.cleveland.data`, 303 observations, 13 variables explicatives et cible `num`. La collection contient quatre bases ; sélectionner explicitement Cleveland. Source officielle : https://archive.ics.uci.edu/static/public/45/heart+disease.zip ; citer UCI et respecter la licence affichée sur sa fiche.
+
+Prévoir la gestion des valeurs `?`, la séparation apprentissage/test avant ajustement des transformations et la validation de l’encodage des classes avec l’équipe. L’entraînement et l’évaluation feront l’objet d’une tâche séparée.
+
+## Organisation prévue
+- `data/` : données téléchargées localement, ignorées par Git.
+- `notebooks/` : exploration et expériences.
+- `scripts/` : futurs scripts de préparation, entraînement et export.
+- `artifacts/pipeline.joblib` : futur pipeline complet (prétraitement + estimateur), ignoré par Git. Conserver le dossier artifacts même sans modèle.
+
+Exporter aussi les versions et le schéma des variables dans un futur fichier de métadonnées. Aligner les versions du backend et du ML : Python `3.13.7`, scikit-learn `1.6.1`, joblib `1.4.2`, NumPy `2.2.6`, SciPy `1.15.3`. Ne pas changer une seule des deux piles sans réexport et validation.
+
+## Environnement Docker ML séparé
+Depuis ce dépôt, mêmes commandes sous Windows et Linux :
+```text
+docker build -t cardioscope-ml:dev .
+docker run --rm -it -p 127.0.0.1:8888:8888 --mount "type=bind,source=.,target=/workspace" cardioscope-ml:dev
+```
+Ouvrir l’URL Jupyter avec le jeton imprimé dans le terminal. Cette image n’est pas démarrée par Compose.
+
+Une fois `scripts/train.py` développé lors de la tâche ML, la commande d’entraînement séparée sera :
+```text
+docker run --rm --mount "type=bind,source=.,target=/workspace" cardioscope-ml:dev python scripts/train.py
+```
+Cette commande n’est pas encore exécutable : le script reste à écrire. Elle devra produire `artifacts/pipeline.joblib`. Compose monte ce dossier en lecture seule dans le backend à `/models`; redémarrer le backend après export. Ne pas charger de fichier joblib non fiable.
