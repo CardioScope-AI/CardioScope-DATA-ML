@@ -41,3 +41,12 @@ Cette commande n’est pas encore exécutable : le script reste à écrire. Elle
   - **Classe 0 (Absence de pathologie)** : `num == 0` -> **164 patients (54.1 %)**.
   - **Classe 1 (Présence de pathologie)** : `num > 0` -> **139 patients (45.9 %)**.
   - La distribution est équilibrée.
+
+## Séparation entraînement / test (Carte 04)
+
+Exécuter `notebooks/01_eda.ipynb` dans l’ordre, après avoir placé le fichier source dans `data/raw/processed.cleveland.data`. Le chemin de lecture est relatif au dossier `notebooks/`.
+
+- Séparation conjointe de `X` et `y` avec `train_test_split` : 80 % entraînement, 20 % test, `stratify=y`, `random_state=42`.
+- Pour les 303 observations Cleveland : 242 observations d’entraînement et 61 de test.
+- Le notebook affiche les effectifs et proportions des classes et vérifie l’absence de chevauchement ainsi que l’alignement entre entrées et cibles.
+- Aucune transformation n’est ajustée avant la séparation. Les valeurs manquantes seront traitées par le pipeline ajusté sur l’entraînement ; le test est réservé à l’évaluation finale.
