@@ -28,3 +28,16 @@ Une fois `scripts/train.py` développé lors de la tâche ML, la commande d’en
 docker run --rm --mount "type=bind,source=.,target=/workspace" cardioscope-ml:dev python scripts/train.py
 ```
 Cette commande n’est pas encore exécutable : le script reste à écrire. Elle devra produire `artifacts/pipeline.joblib`. Compose monte ce dossier en lecture seule dans le backend à `/models`; redémarrer le backend après export. Ne pas charger de fichier joblib non fiable.
+
+## Audit des données et Définition de la cible (Carte 02)
+
+- **Source** : UCI Machine Learning Repository - Heart Disease (Cleveland). Fichier brut `processed.cleveland.data` (récupéré le 11/11/2026).
+- **Dimensions auditées** : 303 observations et 13 variables explicatives d'entrée (X).
+- **Contrôle qualité** :
+  - **Doublons** : 0 doublon strict.
+  - **Valeurs manquantes** : 6 valeurs manquantes au total encodées par `?` dans la source, détectées sur `ca` (4 valeurs) et `thal` (2 valeurs). L'imputation sera gérée dans le pipeline ML pour éviter les fuites de données.
+- **Définition de la cible binaire (y)** :
+  - La cible d'origine `num` prend ses valeurs dans {0, 1, 2, 3, 4}.
+  - **Classe 0 (Absence de pathologie)** : `num == 0` -> **164 patients (54.1 %)**.
+  - **Classe 1 (Présence de pathologie)** : `num > 0` -> **139 patients (45.9 %)**.
+  - La distribution est équilibrée.
