@@ -1,6 +1,6 @@
 # CardioScope · Data / ML
 
-Dataset, préparation des données, entraînement et évaluation du futur modèle. Aucun entraînement ni téléchargement de données n’est exécuté dans cette base.
+Dataset, préparation des données, entraînement et évaluation du futur modèle. Le notebook charge les données locales et prépare la séparation. Le pipeline est construit séparément dans `scripts/pipeline.py`. Aucun entraînement ni téléchargement ne se déclenche automatiquement.
 
 ## Source
 [UCI Heart Disease](https://archive.ics.uci.edu/dataset/45/heart+disease), sous-ensemble Cleveland : fichier `processed.cleveland.data`, 303 observations, 13 variables explicatives et cible `num`. La collection contient quatre bases ; sélectionner explicitement Cleveland. Source officielle : https://archive.ics.uci.edu/static/public/45/heart+disease.zip ; citer UCI et respecter la licence affichée sur sa fiche.
@@ -50,3 +50,14 @@ Exécuter `notebooks/01_eda.ipynb` dans l’ordre, après avoir placé le fichie
 - Pour les 303 observations Cleveland : 242 observations d’entraînement et 61 de test.
 - Le notebook affiche les effectifs et proportions des classes et vérifie l’absence de chevauchement ainsi que l’alignement entre entrées et cibles.
 - Aucune transformation n’est ajustée avant la séparation. Les valeurs manquantes seront traitées par le pipeline ajusté sur l’entraînement ; le test est réservé à l’évaluation finale.
+
+## Construction du pipeline (Carte 05)
+
+`scripts/pipeline.py` expose `build_pipeline(estimator=None)` : chaque appel construit un pipeline neuf et non ajusté. Le notebook reste consacré à l’exploration et à la séparation entraînement/test.
+
+- Numériques : `age`, `trestbps`, `chol`, `thalach`, `oldpeak` ; imputation médiane, sans standardisation (inutile pour les arbres de Random Forest).
+- Catégorielles : `sex`, `cp`, `fbs`, `restecg`, `exang`, `slope`, `ca`, `thal` ; imputation par le mode puis `OneHotEncoder(handle_unknown="ignore")`. Le traitement catégoriel de `ca` est un choix initial à comparer pendant la validation.
+- Entrée : DataFrame avec les 13 noms de colonnes UCI et leurs codes originaux ; valeurs manquantes sous forme de NaN. `num` est exclu des entrées. La validation des champs API reste une responsabilité du backend.
+- Estimateur retenu : `RandomForestClassifier(n_estimators=100, random_state=42)`, remplaçable via l'argument `estimator`. Les hyperparamètres sont initiaux ; leur sélection et l’évaluation relèvent de la tâche d’entraînement.
+- Entraînement ultérieur : `pipeline.fit(X_train, y_train)` uniquement. Le prétraitement est ainsi ajusté dans le pipeline sans utiliser le test. Pour la sélection du modèle, passer le pipeline complet à la validation croisée sur l'entraînement.
+- Aucun ajustement ni export à l'import du module ou lors de sa construction. Le script d'entraînement et l'export de `artifacts/pipeline.joblib` restent à réaliser.
