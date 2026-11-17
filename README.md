@@ -61,3 +61,25 @@ Exécuter `notebooks/01_eda.ipynb` dans l’ordre, après avoir placé le fichie
 - Estimateur retenu : `RandomForestClassifier(n_estimators=100, random_state=42)`, remplaçable via l'argument `estimator`. Les hyperparamètres sont initiaux ; leur sélection et l’évaluation relèvent de la tâche d’entraînement.
 - Entraînement ultérieur : `pipeline.fit(X_train, y_train)` uniquement. Le prétraitement est ainsi ajusté dans le pipeline sans utiliser le test. Pour la sélection du modèle, passer le pipeline complet à la validation croisée sur l'entraînement.
 - Aucun ajustement ni export à l'import du module ou lors de sa construction. `scripts/train.py` est opérationnel : il ajuste le pipeline sur l'entraînement, exporte `artifacts/pipeline.joblib` et écrit `artifacts/metadata.json`. Le test reste réservé à l'évaluation finale.
+
+## Évaluation finale sur le test réservé (tâche 7)
+
+Le pipeline Random Forest enregistré dans `artifacts/pipeline.joblib` a été évalué avec `scripts/evaluate.py` sur les 61 profils de test réservés. Ces profils n’ont pas été utilisés pour entraîner le modèle. La séparation des données reproduit celle de `scripts/train.py` : `test_size=0.20`, `random_state=42` et `stratify=y`.
+
+| Mesure | Résultat |
+| --- | ---: |
+| Accuracy | 0,8689 |
+| Précision (classe 1) | 0,8125 |
+| Recall / sensibilité (classe 1) | 0,9286 |
+| Spécificité (classe 0) | 0,8182 |
+| F1 (classe 1) | 0,8667 |
+| ROC-AUC | 0,9421 |
+
+Matrice de confusion : les lignes représentent les classes réelles et les colonnes les classes prédites.
+
+| Classe réelle | Prédite 0 | Prédite 1 |
+| --- | ---: | ---: |
+| 0 — absence | 27 | 6 |
+| 1 — présence | 2 | 26 |
+
+Le modèle classe correctement 53 profils sur 61. Il produit 6 faux positifs et 2 faux négatifs sur ce test. Les résultats détaillés sont enregistrés dans `artifacts/test_evaluation.json`. Ce test réservé sert à rendre compte de la performance finale ; il ne doit pas servir à choisir de nouveaux réglages du modèle.
