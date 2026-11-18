@@ -26,11 +26,11 @@
     "test_samples": 61,
     "cv_folds": 5,
     "cv_metrics": {
-        "accuracy": 0.8181,
-        "precision": 0.8173,
-        "recall": 0.7826,
-        "f1": 0.7948,
-        "roc_auc": 0.8967
+        "accuracy": 0.814,
+        "precision": 0.8099,
+        "recall": 0.783,
+        "f1": 0.7916,
+        "roc_auc": 0.9013
     },
     "python_version": "3.13.7",
     "numpy_version": "2.2.6",
