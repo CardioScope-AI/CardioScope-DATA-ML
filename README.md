@@ -2,7 +2,15 @@
 
 Dataset, préparation des données, entraînement et évaluation du futur modèle. Le notebook charge les données locales et prépare la séparation. Le pipeline est construit séparément dans `scripts/pipeline.py`. Aucun entraînement ni téléchargement ne se déclenche automatiquement.
 
-## Source
+## Limites et usage du modèle (DATA-ML #20)
+
+Lire la [fiche des limites du modèle](docs/limites-modele.md) avant de présenter
+ses résultats. Le démonstrateur est destiné à l’administrateur sur des profils
+fictifs : la classe prédite n’est ni un diagnostic ni un risque à 5 ou 10 ans.
+La fiche distingue les scores rapportés, les erreurs possibles, les limites du
+dataset et les validations encore absentes.
+
+## Source du dataset
 [UCI Heart Disease](https://archive.ics.uci.edu/dataset/45/heart+disease), sous-ensemble Cleveland : fichier `processed.cleveland.data`, 303 observations, 13 variables explicatives et cible `num`. La collection contient quatre bases ; sélectionner explicitement Cleveland. Source officielle : https://archive.ics.uci.edu/static/public/45/heart+disease.zip ; citer UCI et respecter la licence affichée sur sa fiche.
 
 Prévoir la gestion des valeurs `?` et la séparation apprentissage/test avant ajustement des transformations. `scripts/train.py` entraîne le Random Forest. L'évaluation sur le test réservé reste une tâche séparée.
@@ -68,18 +76,18 @@ Le pipeline Random Forest enregistré dans `artifacts/pipeline.joblib` a été �
 
 | Mesure | Résultat |
 | --- | ---: |
-| Accuracy | 0,8689 |
-| Précision (classe 1) | 0,8125 |
+| Accuracy | 0,8852 |
+| Précision (classe 1) | 0,8387 |
 | Recall / sensibilité (classe 1) | 0,9286 |
-| Spécificité (classe 0) | 0,8182 |
-| F1 (classe 1) | 0,8667 |
-| ROC-AUC | 0,9421 |
+| Spécificité (classe 0) | 0,8485 |
+| F1 (classe 1) | 0,8814 |
+| ROC-AUC | 0,9529 |
 
 Matrice de confusion : les lignes représentent les classes réelles et les colonnes les classes prédites.
 
 | Classe réelle | Prédite 0 | Prédite 1 |
 | --- | ---: | ---: |
-| 0 — absence | 27 | 6 |
+| 0 — absence | 28 | 5 |
 | 1 — présence | 2 | 26 |
 
-Le modèle classe correctement 53 profils sur 61. Il produit 6 faux positifs et 2 faux négatifs sur ce test. Les résultats détaillés sont enregistrés dans `artifacts/test_evaluation.json`. Ce test réservé sert à rendre compte de la performance finale ; il ne doit pas servir à choisir de nouveaux réglages du modèle.
+Le rapport actuel décrit 54 profils correctement classés sur 61, avec 5 faux positifs et 2 faux négatifs. Les valeurs ci-dessus sont alignées sur `artifacts/test_evaluation.json` ; cette mise à jour documentaire ne réexécute pas l’évaluation et ne certifie pas l’identité de l’artefact déployé. Ce test réservé sert à rendre compte de la performance finale ; il ne doit pas servir à choisir de nouveaux réglages du modèle. Voir la [fiche des limites](docs/limites-modele.md).
