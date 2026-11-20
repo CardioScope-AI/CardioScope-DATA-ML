@@ -1,7 +1,8 @@
 # Limites du modèle CardioScope — DATA-ML #20
 
 Document établi le 19 novembre 2026 à partir du code et des rapports présents
-dans le dépôt. Usage prévu : démonstrateur pédagogique réservé à l’administrateur,
+dans le dépôt, scores actualisés le 20 novembre 2026 après réévaluation du modèle
+sauvegardé, sans le réentraîner. Usage prévu : démonstrateur pédagogique réservé à l’administrateur,
 sur des profils fictifs. Le modèle n’est pas validé pour un usage clinique.
 
 ## 1. Ce que prédit réellement le modèle
@@ -69,7 +70,11 @@ une recommandation de traitement.
 Sources locales : [métadonnées](../artifacts/metadata.json),
 [rapport de test](../artifacts/test_evaluation.json),
 [entraînement](../scripts/train.py) et [évaluation](../scripts/evaluate.py).
-Les valeurs suivantes sont celles des rapports consultés, sans nouvel entraînement.
+Les valeurs de test ont été recalculées le 20 novembre 2026 : l’ancien rapport
+indiquait 54/61 alors que le modèle sauvegardé donne 53/61. Aucun réglage du modèle
+n’a été choisi à partir de cette vérification. Les moyennes CV ont aussi été
+recalculées sur des clones du pipeline, uniquement sur l’entraînement, puis
+corrigées dans metadata.json. L’export de release vérifie de nouveau les deux rapports.
 
 La séparation stratifiée utilise 242 profils d’entraînement et 61 de test,
 test_size=0.20 et random_state=42. La validation croisée à cinq plis emploie
@@ -77,12 +82,12 @@ uniquement l’entraînement ; le pipeline complet est ajusté à chaque pli.
 
 | Mesure | Moyenne CV sur l’entraînement | Test réservé |
 | --- | ---: | ---: |
-| Accuracy | 81,40 % | 88,52 % |
-| Précision classe 1 | 80,99 % | 83,87 % |
-| Sensibilité / recall classe 1 | 78,30 % | 92,86 % |
-| F1 classe 1 | 79,16 % | 88,14 % |
-| ROC-AUC | 0,9013 | 0,9529 |
-| Spécificité classe 0 | Non rapportée | 84,85 % |
+| Accuracy | 81,81 % | 86,89 % |
+| Précision classe 1 | 81,73 % | 81,25 % |
+| Sensibilité / recall classe 1 | 78,26 % | 92,86 % |
+| F1 classe 1 | 79,48 % | 86,67 % |
+| ROC-AUC | 0,8967 | 0,9421 |
+| Spécificité classe 0 | Non rapportée | 81,82 % |
 
 La ROC-AUC est calculée sur les scores du modèle, pas sur une probabilité clinique
 validée. Les écarts entre CV et test ne prouvent ni une amélioration sur une autre
@@ -92,14 +97,14 @@ Le rapport de test contient cette matrice :
 
 | Classe réelle | Prédite 0 | Prédite 1 |
 | --- | ---: | ---: |
-| 0 | 28 vrais négatifs | 5 faux positifs |
+| 0 | 27 vrais négatifs | 6 faux positifs |
 | 1 | 2 faux négatifs | 26 vrais positifs |
 
-Soit 54 prédictions correctes sur 61, mais 7 erreurs :
+Soit 53 prédictions correctes sur 61, mais 8 erreurs :
 
 - Les 2 faux négatifs illustrent qu’un résultat 0 peut manquer une présence
   selon la cible ; il ne doit pas rassurer à tort.
-- Les 5 faux positifs illustrent qu’un résultat 1 peut signaler à tort une présence
+- Les 6 faux positifs illustrent qu’un résultat 1 peut signaler à tort une présence
   selon la cible ; il ne suffit pas à conclure à une maladie.
 
 Ces nombres décrivent ce test uniquement. Une seule erreur supplémentaire change
@@ -128,10 +133,11 @@ indépendante est nécessaire pour estimer honnêtement la généralisation.
 
 ## 6. Limites de traçabilité et d’exploitation
 
-Les rapports consultés ne contiennent pas encore d’identifiant de release commun
-ni d’empreinte liant pipeline.joblib aux deux JSON. Ce document décrit leurs valeurs,
-mais ne certifie pas que tout fichier joblib présent ou déployé produit ces scores.
-La cohérence des artefacts et le versionnement relèvent de DATA-ML #21 et #22.
+Les exports de travail à la racine artifacts ne contiennent pas de version commune.
+La commande DATA-ML #22 produit désormais un dossier de release avec un manifeste
+liant le modèle et ses rapports par SHA-256, après vérification des scores.
+Cela ne certifie pas l’identité d’un autre joblib présent ou déployé : contrôler
+le manifeste et la version effectivement chargée. L’audit complet relève de #21.
 
 Le script evaluate.py reconstruit le test depuis le fichier courant. Modifier
 ce fichier ou son ordre peut changer le test même avec random_state=42 : conserver

@@ -2,6 +2,13 @@
 
 Dataset, préparation des données, entraînement et évaluation du futur modèle. Le notebook charge les données locales et prépare la séparation. Le pipeline est construit séparément dans `scripts/pipeline.py`. Aucun entraînement ni téléchargement ne se déclenche automatiquement.
 
+## Releases du modèle (DATA-ML #22)
+
+La commande `python -m scripts.export_release --version rf-cleveland-v1` vérifie
+les exports de travail puis publie une copie immuable avec manifeste SHA-256 dans
+`artifacts/releases/<version>`. Voir [le guide Docker, publication et retour arrière](docs/releases-modele.md).
+Les JSON sont suivis par Git ; le modèle joblib doit être distribué séparément.
+
 ## Limites et usage du modèle (DATA-ML #20)
 
 Lire la [fiche des limites du modèle](docs/limites-modele.md) avant de présenter
@@ -76,18 +83,18 @@ Le pipeline Random Forest enregistré dans `artifacts/pipeline.joblib` a été �
 
 | Mesure | Résultat |
 | --- | ---: |
-| Accuracy | 0,8852 |
-| Précision (classe 1) | 0,8387 |
+| Accuracy | 0,8689 |
+| Précision (classe 1) | 0,8125 |
 | Recall / sensibilité (classe 1) | 0,9286 |
-| Spécificité (classe 0) | 0,8485 |
-| F1 (classe 1) | 0,8814 |
-| ROC-AUC | 0,9529 |
+| Spécificité (classe 0) | 0,8182 |
+| F1 (classe 1) | 0,8667 |
+| ROC-AUC | 0,9421 |
 
 Matrice de confusion : les lignes représentent les classes réelles et les colonnes les classes prédites.
 
 | Classe réelle | Prédite 0 | Prédite 1 |
 | --- | ---: | ---: |
-| 0 — absence | 28 | 5 |
+| 0 — absence | 27 | 6 |
 | 1 — présence | 2 | 26 |
 
-Le rapport actuel décrit 54 profils correctement classés sur 61, avec 5 faux positifs et 2 faux négatifs. Les valeurs ci-dessus sont alignées sur `artifacts/test_evaluation.json` ; cette mise à jour documentaire ne réexécute pas l’évaluation et ne certifie pas l’identité de l’artefact déployé. Ce test réservé sert à rendre compte de la performance finale ; il ne doit pas servir à choisir de nouveaux réglages du modèle. Voir la [fiche des limites](docs/limites-modele.md).
+Le rapport actuel décrit 53 profils correctement classés sur 61, avec 6 faux positifs et 2 faux négatifs. Il a été régénéré avec le modèle sauvegardé le 20 novembre 2026, sans réentraînement, après détection d’un ancien rapport incompatible (54/61). Les valeurs décrivent ce fichier local, pas automatiquement tout modèle déployé. Le test réservé ne doit pas servir à choisir de nouveaux réglages. Voir la [fiche des limites](docs/limites-modele.md) et le [guide des releases](docs/releases-modele.md).

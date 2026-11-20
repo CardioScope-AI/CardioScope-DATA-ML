@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "model_version": "rf-cleveland-v1",
+  "artifact_sha256": "66a7e43813af0416fbbaa5af209e6b0ab852d9d4b8359e7a7bf132698ad0753d",
+  "metadata_sha256": "176f733f78b3841c608f0dda8d9767d75fea53a9c119a9ac208352588424dac9",
+  "test_evaluation_sha256": "2544f050506974847c2f584cd23ea21782893a466ec9b6b0afecf8e4091f72cb",
+  "limitations": [
+    "Démonstrateur pédagogique ; ceci ne constitue pas un diagnostic médical.",
+    "Utiliser uniquement des profils fictifs.",
+    "Dataset historique Cleveland de 303 observations ; absence de validation externe démontrée.",
+    "La classe 0 ou 1 ne prédit pas un risque à 5 ou 10 ans ; des erreurs sont possibles.",
+    "Probabilités non calibrées et performances par sous-groupe non établies.",
+    "Le modèle ne se réentraîne pas automatiquement à partir des nouvelles données ou des simulations enregistrées."
+  ]
+}
