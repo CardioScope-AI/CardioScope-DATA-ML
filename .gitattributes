@@ -1,0 +1,2 @@
+# Release hashes refer to exact bytes; prevent Windows/Linux newline conversion.
+artifacts/releases/** -text
