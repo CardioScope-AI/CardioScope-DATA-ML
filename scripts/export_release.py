@@ -16,14 +16,45 @@ import numpy as np
 import pandas as pd
 from sklearn.base import clone
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score,
-                             precision_score, recall_score, roc_auc_score)
-from sklearn.model_selection import StratifiedKFold, cross_validate, train_test_split
+from sklearn.metrics import (
+    accuracy_score,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
+from sklearn.model_selection import (
+    StratifiedKFold,
+    cross_validate,
+    train_test_split,
+)
+
 
 ROOT = Path(__file__).resolve().parents[1]
-FEATURES = ["age", "sex", "cp", "trestbps", "chol", "fbs", "restecg",
-            "thalach", "exang", "oldpeak", "slope", "ca", "thal"]
-FILES = ("pipeline.joblib", "metadata.json", "test_evaluation.json")
+
+FEATURES = [
+    "age",
+    "sex",
+    "cp",
+    "trestbps",
+    "chol",
+    "fbs",
+    "restecg",
+    "thalach",
+    "exang",
+    "oldpeak",
+    "slope",
+    "ca",
+    "thal",
+]
+
+FILES = (
+    "pipeline.joblib",
+    "metadata.json",
+    "test_evaluation.json",
+)
+
 LIMITATIONS = [
     "Démonstrateur pédagogique ; ceci ne constitue pas un diagnostic médical.",
     "Utiliser uniquement des profils fictifs.",
@@ -35,14 +66,26 @@ LIMITATIONS = [
 
 
 def sha256(data):
+    """Calculer l'empreinte SHA-256 de données binaires."""
     return hashlib.sha256(data).hexdigest()
 
 
 def json_bytes(value):
-    return (json.dumps(value, indent=2, ensure_ascii=False, allow_nan=False) + "\n").encode("utf-8")
+    """Sérialiser un objet JSON en refusant NaN et Infinity."""
+    return (
+        json.dumps(
+            value,
+            indent=2,
+            ensure_ascii=False,
+            allow_nan=False,
+        )
+        + "\n"
+    ).encode("utf-8")
 
 
 def read_json(data):
+    """Lire du JSON et refuser les clés dupliquées."""
+
     def unique(pairs):
         result = {}
         for key, value in pairs:
@@ -50,127 +93,401 @@ def read_json(data):
                 raise ValueError("Duplicate JSON key")
             result[key] = value
         return result
+
     return json.loads(data, object_pairs_hook=unique)
 
 
 def assert_scores(reported, actual):
+    """Vérifier que les métriques publiées correspondent aux métriques recalculées."""
     if set(reported) != set(actual):
         raise ValueError("Missing or unexpected metrics")
+
     for name, expected in actual.items():
         value = reported[name]
-        if (isinstance(value, bool) or not isinstance(value, (float, int))
-                or not np.isfinite(value) or not 0 <= value <= 1
-                or not np.isclose(value, expected, atol=0.00005, rtol=0)):
-            raise ValueError(f"Metric mismatch for {name}: reported={value}, recomputed={expected}")
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (float, int))
+            or not np.isfinite(value)
+            or not 0 <= value <= 1
+            or not np.isclose(value, expected, atol=0.00005, rtol=0)
+        ):
+            raise ValueError(
+                f"Metric mismatch for {name}: "
+                f"reported={value}, recomputed={expected}"
+            )
 
 
 def verify_snapshot(snapshot, dataset):
-    """Check saved predictions and recompute CV on fresh clones, never refit the saved object."""
+    """Vérifier les artefacts sans réentraîner le modèle sauvegardé."""
     metadata = read_json(snapshot["metadata.json"])
     report = read_json(snapshot["test_evaluation.json"])
-    packages = {"numpy_version": "numpy", "scipy_version": "scipy",
-                "sklearn_version": "scikit-learn", "joblib_version": "joblib"}
+
+    # Vérifier les nouvelles informations de schéma et de provenance.
+    dataset_sha256 = sha256(dataset)
+
+    if (
+        type(metadata.get("schema_version")) is not int
+        or metadata["schema_version"] != 1
+    ):
+        raise ValueError(
+            "Unsupported metadata schema version"
+        )
+
+    if (
+        type(report.get("schema_version")) is not int
+        or report["schema_version"] != 1
+    ):
+        raise ValueError(
+            "Unsupported test evaluation schema version"
+        )
+
+    if metadata.get("dataset_sha256") != dataset_sha256:
+        raise ValueError(
+            "Dataset SHA-256 does not match metadata"
+        )
+
+    if report.get("dataset_sha256") != dataset_sha256:
+        raise ValueError(
+            "Dataset SHA-256 does not match test evaluation"
+        )
+
+    expected_split = {
+        "test_size": 0.2,
+        "random_state": 42,
+        "stratify": True,
+    }
+    if metadata.get("split") != expected_split:
+        raise ValueError("Unsupported train/test split protocol")
+
+    # Vérifier les versions des bibliothèques utilisées.
+    packages = {
+        "numpy_version": "numpy",
+        "scipy_version": "scipy",
+        "sklearn_version": "scikit-learn",
+        "joblib_version": "joblib",
+    }
+
     for field, package in packages.items():
         if metadata[field] != version(package):
-            raise ValueError(f"Use the pinned training environment: {package}")
-    if (metadata["model"] != "RandomForestClassifier" or metadata["dataset"] != "Cleveland"
-            or report["dataset"] != "Cleveland" or metadata["features"] != FEATURES
-            or metadata["target"]["name"] != "num" or metadata["cv_folds"] != 5):
-        raise ValueError("Unsupported metadata schema or training protocol")
-    frame = pd.read_csv(BytesIO(dataset), header=None, names=FEATURES + ["num"], na_values="?")
-    if frame.shape != (303, 14) or not frame["num"].isin([0, 1, 2, 3, 4]).all():
-        raise ValueError("Expected the original Cleveland dataset and valid target")
-    X, y = frame.drop(columns="num"), (frame["num"] > 0).astype(int)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, random_state=42, stratify=y)
-    if (metadata["train_samples"] != len(X_train) or metadata["test_samples"] != len(X_test)
-            or report["test_samples"] != len(X_test)):
+            raise ValueError(
+                f"Use the pinned training environment: {package}"
+            )
+
+    # Vérifier le modèle, le dataset, les variables et le protocole connus.
+    if (
+        metadata["model"] != "RandomForestClassifier"
+        or metadata["dataset"] != "Cleveland"
+        or report["dataset"] != "Cleveland"
+        or metadata["features"] != FEATURES
+        or metadata["target"]["name"] != "num"
+        or metadata["cv_folds"] != 5
+    ):
+        raise ValueError(
+            "Unsupported metadata schema or training protocol"
+        )
+
+    # Vérifier le dataset Cleveland.
+    frame = pd.read_csv(
+        BytesIO(dataset),
+        header=None,
+        names=FEATURES + ["num"],
+        na_values="?",
+    )
+
+    if (
+        frame.shape != (303, 14)
+        or not frame["num"].isin([0, 1, 2, 3, 4]).all()
+    ):
+        raise ValueError(
+            "Expected the original Cleveland dataset and valid target"
+        )
+
+    X = frame.drop(columns="num")
+    y = (frame["num"] > 0).astype(int)
+
+    # Reproduire le découpage documenté dans metadata.json.
+    split = metadata["split"]
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=split["test_size"],
+        random_state=split["random_state"],
+        stratify=y if split["stratify"] else None,
+    )
+
+    if (
+        metadata["train_samples"] != len(X_train)
+        or metadata["test_samples"] != len(X_test)
+        or report["test_samples"] != len(X_test)
+    ):
         raise ValueError("Inconsistent split counts")
+
+    # Charger le modèle sauvegardé et vérifier sa configuration.
     pipeline = joblib.load(BytesIO(snapshot["pipeline.joblib"]))
     classifier = pipeline.named_steps["classifier"]
-    if (not isinstance(classifier, RandomForestClassifier)
-            or list(pipeline.feature_names_in_) != FEATURES
-            or not np.array_equal(classifier.classes_, [0, 1])
-            or classifier.n_estimators != metadata["n_estimators"]
-            or classifier.random_state != metadata["random_state"]):
+
+    if (
+        not isinstance(classifier, RandomForestClassifier)
+        or list(pipeline.feature_names_in_) != FEATURES
+        or not np.array_equal(classifier.classes_, [0, 1])
+        or classifier.n_estimators != metadata["n_estimators"]
+        or classifier.random_state != metadata["random_state"]
+    ):
         raise ValueError("Pipeline does not match metadata")
+
+    # Recalculer les prédictions du test réservé.
     prediction = pipeline.predict(X_test)
-    probability = pipeline.predict_proba(X_test)[:, list(classifier.classes_).index(1)]
-    tn, fp, fn, tp = confusion_matrix(y_test, prediction, labels=[0, 1]).ravel()
-    matrix = dict(zip(("true_negative", "false_positive", "false_negative", "true_positive"),
-                      map(int, (tn, fp, fn, tp))))
-    if (report["confusion_matrix"] != matrix
-            or any(type(n) is not int for n in report["confusion_matrix"].values())):
-        raise ValueError("Confusion matrix does not match saved model")
-    metrics = dict(accuracy=round(float(accuracy_score(y_test, prediction)), 4),
-                   precision=round(float(precision_score(y_test, prediction, zero_division=0)), 4),
-                   recall=round(float(recall_score(y_test, prediction, zero_division=0)), 4),
-                   specificity=round(float(tn / (tn + fp)), 4),
-                   f1=round(float(f1_score(y_test, prediction, zero_division=0)), 4),
-                   roc_auc=round(float(roc_auc_score(y_test, probability)), 4))
+    probability = pipeline.predict_proba(X_test)[
+        :, list(classifier.classes_).index(1)
+    ]
+
+    tn, fp, fn, tp = confusion_matrix(
+        y_test,
+        prediction,
+        labels=[0, 1],
+    ).ravel()
+
+    matrix = dict(
+        zip(
+            (
+                "true_negative",
+                "false_positive",
+                "false_negative",
+                "true_positive",
+            ),
+            map(int, (tn, fp, fn, tp)),
+        )
+    )
+
+    if (
+        report["confusion_matrix"] != matrix
+        or any(
+            type(number) is not int
+            for number in report["confusion_matrix"].values()
+        )
+    ):
+        raise ValueError(
+            "Confusion matrix does not match saved model"
+        )
+
+    metrics = {
+        "accuracy": round(
+            float(accuracy_score(y_test, prediction)), 4
+        ),
+        "precision": round(
+            float(
+                precision_score(
+                    y_test,
+                    prediction,
+                    zero_division=0,
+                )
+            ),
+            4,
+        ),
+        "recall": round(
+            float(
+                recall_score(
+                    y_test,
+                    prediction,
+                    zero_division=0,
+                )
+            ),
+            4,
+        ),
+        "specificity": round(float(tn / (tn + fp)), 4),
+        "f1": round(
+            float(
+                f1_score(
+                    y_test,
+                    prediction,
+                    zero_division=0,
+                )
+            ),
+            4,
+        ),
+        "roc_auc": round(
+            float(roc_auc_score(y_test, probability)), 4
+        ),
+    }
+
     assert_scores(report["metrics"], metrics)
-    cv = cross_validate(clone(pipeline), X_train, y_train,
-                        cv=StratifiedKFold(n_splits=5, shuffle=True, random_state=42),
-                        scoring=["accuracy", "precision", "recall", "f1", "roc_auc"], error_score="raise")
-    cv_metrics = {name: round(float(cv["test_" + name].mean()), 4)
-                  for name in ("accuracy", "precision", "recall", "f1", "roc_auc")}
+
+    # Recalculer la validation croisée sur des copies du pipeline.
+    cv = cross_validate(
+        clone(pipeline),
+        X_train,
+        y_train,
+        cv=StratifiedKFold(
+            n_splits=5,
+            shuffle=True,
+            random_state=42,
+        ),
+        scoring=[
+            "accuracy",
+            "precision",
+            "recall",
+            "f1",
+            "roc_auc",
+        ],
+        error_score="raise",
+    )
+
+    cv_metrics = {
+        name: round(float(cv[f"test_{name}"].mean()), 4)
+        for name in (
+            "accuracy",
+            "precision",
+            "recall",
+            "f1",
+            "roc_auc",
+        )
+    }
+
     assert_scores(metadata["cv_metrics"], cv_metrics)
-    return {"dataset_sha256": sha256(dataset), "train_samples": len(X_train),
-            "test_samples": len(X_test), "cv_folds": 5,
-            "cv_metrics": cv_metrics, "test_metrics": metrics, "confusion_matrix": matrix}
+
+    return {
+        "dataset_sha256": dataset_sha256,
+        "train_samples": len(X_train),
+        "test_samples": len(X_test),
+        "cv_folds": 5,
+        "cv_metrics": cv_metrics,
+        "test_metrics": metrics,
+        "confusion_matrix": matrix,
+    }
 
 
 def export_release(source, dataset_path, output, model_version):
-    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,99}", model_version):
-        raise ValueError("Version must contain 1-100 ASCII letters, digits, dots, underscores or hyphens")
+    """Vérifier puis publier une release immuable."""
+    if not re.fullmatch(
+        r"[A-Za-z0-9][A-Za-z0-9._-]{0,99}",
+        model_version,
+    ):
+        raise ValueError(
+            "Version must contain 1-100 ASCII letters, digits, "
+            "dots, underscores or hyphens"
+        )
+
     destination = output / model_version
     if destination.exists():
-        raise FileExistsError("Release already exists; choose a new version, never overwrite")
-    snapshot = {name: (source / name).read_bytes() for name in FILES}
+        raise FileExistsError(
+            "Release already exists; choose a new version, never overwrite"
+        )
+
+    snapshot = {
+        name: (source / name).read_bytes()
+        for name in FILES
+    }
     dataset = dataset_path.read_bytes()
+
     verification = verify_snapshot(snapshot, dataset)
-    manifest = dict(schema_version=1, model_version=model_version,
-                    artifact_sha256=sha256(snapshot["pipeline.joblib"]),
-                    metadata_sha256=sha256(snapshot["metadata.json"]),
-                    test_evaluation_sha256=sha256(snapshot["test_evaluation.json"]), limitations=LIMITATIONS)
+
+    manifest = {
+        "schema_version": 1,
+        "model_version": model_version,
+        "artifact_sha256": sha256(snapshot["pipeline.joblib"]),
+        "metadata_sha256": sha256(snapshot["metadata.json"]),
+        "test_evaluation_sha256": sha256(
+            snapshot["test_evaluation.json"]
+        ),
+        "limitations": LIMITATIONS,
+    }
+
     output.mkdir(parents=True, exist_ok=True)
-    # Stage on the same filesystem. Publish only a complete, validated directory.
-    staging = Path(tempfile.mkdtemp(prefix=".release-", dir=output))
+
+    # Préparer la release dans un dossier temporaire du même système de fichiers.
+    staging = Path(
+        tempfile.mkdtemp(
+            prefix=".release-",
+            dir=output,
+        )
+    )
+
     try:
         for name, data in snapshot.items():
             (staging / name).write_bytes(data)
-        (staging / "release.json").write_bytes(json_bytes(manifest))
-        (staging / "verification.json").write_bytes(json_bytes({
-            "verified_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-            "protocol": "Cleveland/80-20-stratified/random42/CV5", **verification,
-        }))
+
+        (staging / "release.json").write_bytes(
+            json_bytes(manifest)
+        )
+
+        verification_record = {
+            "verified_at_utc": (
+                datetime.now(timezone.utc)
+                .isoformat()
+                .replace("+00:00", "Z")
+            ),
+            "protocol": "Cleveland/80-20-stratified/random42/CV5",
+            **verification,
+        }
+
+        (staging / "verification.json").write_bytes(
+            json_bytes(verification_record)
+        )
+
+        # Le verrou empêche deux publications simultanées de la même version.
         lock = output / ("." + model_version + ".lock")
-        # Exclusive publication lock coordinates concurrent exporters on Windows/Linux.
         lock.open("x").close()
+
         try:
             if destination.exists():
-                raise FileExistsError("Release already exists; never overwrite")
+                raise FileExistsError(
+                    "Release already exists; never overwrite"
+                )
             staging.rename(destination)
         finally:
             lock.unlink()
+
     finally:
         if staging.exists():
-            if staging.resolve().parent != output.resolve() or not staging.name.startswith(".release-"):
-                raise ValueError("Refusing cleanup outside release staging directory")
+            if (
+                staging.resolve().parent != output.resolve()
+                or not staging.name.startswith(".release-")
+            ):
+                raise ValueError(
+                    "Refusing cleanup outside release staging directory"
+                )
             shutil.rmtree(staging)
+
     return destination
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", required=True)
-    parser.add_argument("--source", type=Path, default=ROOT / "artifacts")
-    parser.add_argument("--dataset", type=Path, default=ROOT / "data/raw/processed.cleveland.data")
-    parser.add_argument("--output", type=Path, default=ROOT / "artifacts/releases")
+    parser.add_argument(
+        "--source",
+        type=Path,
+        default=ROOT / "artifacts",
+    )
+    parser.add_argument(
+        "--dataset",
+        type=Path,
+        default=ROOT / "data" / "raw" / "processed.cleveland.data",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=ROOT / "artifacts" / "releases",
+    )
+
     args = parser.parse_args()
+
     try:
-        destination = export_release(args.source, args.dataset, args.output, args.version)
-    except (OSError, ValueError, KeyError, TypeError, AttributeError) as exc:
+        destination = export_release(
+            args.source,
+            args.dataset,
+            args.output,
+            args.version,
+        )
+    except (
+        OSError,
+        ValueError,
+        KeyError,
+        TypeError,
+        AttributeError,
+    ) as exc:
         parser.exit(1, f"Release not published: {exc}\n")
+
     print(f"Verified release published: {destination}")
 
 
