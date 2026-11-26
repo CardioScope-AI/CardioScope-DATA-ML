@@ -9,6 +9,10 @@ les exports de travail puis publie une copie immuable avec manifeste SHA-256 dan
 `artifacts/releases/<version>`. Voir [le guide Docker, publication et retour arrière](docs/releases-modele.md).
 Les JSON sont suivis par Git ; le modèle joblib doit être distribué séparément.
 
+Pour vérifier après transfert que tous les fichiers appartiennent bien à la même
+release, utiliser [le vérificateur DATA-ML #21](docs/verification-artefacts.md) :
+`python -m scripts.verify_release --release artifacts/releases/rf-cleveland-v1`.
+
 ## Limites et usage du modèle (DATA-ML #20)
 
 Lire la [fiche des limites du modèle](docs/limites-modele.md) avant de présenter
