@@ -109,7 +109,7 @@ def validate_release(release_dir, dataset_path=None):
 
     if type(metadata.get("schema_version")) is not int or metadata["schema_version"] != 1:
         raise ValueError("Version de schéma metadata.json non prise en charge.")
-    if metadata.get("model") != "RandomForestClassifier" or metadata.get("dataset") != "Cleveland":
+    if metadata.get("model") not in ("RandomForestClassifier", "XGBClassifier") or metadata.get("dataset") != "Cleveland":
         raise ValueError("Le modèle ou le jeu de données de metadata.json est inattendu.")
     if metadata.get("features") != FEATURES or not isinstance(metadata.get("target"), dict) \
             or metadata["target"].get("name") != "num":
@@ -149,6 +149,8 @@ def validate_release(release_dir, dataset_path=None):
 
     cv_keys = ("accuracy", "precision", "recall", "f1", "roc_auc")
     test_keys = (*cv_keys, "specificity")
+    if metadata["model"] == "XGBClassifier":
+        cv_keys = test_keys
     cv_metrics = metadata.get("cv_metrics")
     test_metrics = report.get("metrics")
     verified_cv = verification.get("cv_metrics")

@@ -120,6 +120,12 @@ def assert_scores(reported, actual):
 def verify_snapshot(snapshot, dataset):
     """Vérifier les artefacts sans réentraîner le modèle sauvegardé."""
     metadata = read_json(snapshot["metadata.json"])
+    if metadata.get("model") == "XGBClassifier":
+        if __package__:
+            from .verify_xgboost import verify_snapshot as verify_xgboost
+        else:
+            from verify_xgboost import verify_snapshot as verify_xgboost
+        return verify_xgboost(snapshot, dataset)
     report = read_json(snapshot["test_evaluation.json"])
 
     # Vérifier les nouvelles informations de schéma et de provenance.

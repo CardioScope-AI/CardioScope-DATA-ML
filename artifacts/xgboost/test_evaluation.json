@@ -19,5 +19,6 @@
     "specificity": 0.8788,
     "f1": 0.9153,
     "roc_auc": 0.9524
-  }
+  },
+  "dataset": "Cleveland"
 }

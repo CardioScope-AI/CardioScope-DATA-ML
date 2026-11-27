@@ -101,7 +101,7 @@ def run(output_dir):
     joblib.dump(pipeline, model_path)
     metadata["artifact_sha256"] = hashlib.sha256(model_path.read_bytes()).hexdigest()
     report = {
-        "schema_version": 1, "model": "XGBClassifier", "dataset_sha256": dataset_sha256,
+        "schema_version": 1, "model": "XGBClassifier", "dataset": "Cleveland", "dataset_sha256": dataset_sha256,
         "artifact_sha256": metadata["artifact_sha256"], "test_samples": len(y_test),
         "positive_class": "1 = présence de pathologie", "threshold": 0.5,
         "confusion_matrix": dict(zip(

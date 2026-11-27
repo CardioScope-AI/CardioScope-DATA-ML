@@ -74,13 +74,29 @@ Matrice du test : 29 vrais négatifs, 4 faux positifs, 1 faux négatif et
 est petit et les scores CV sont moins élevés. Conserver ces paramètres fixes
 pour cette référence et comparer les protocoles avant de conclure.
 
-## Limite d’intégration actuelle
+## Release et consultation dans l’application
 
-Les outils `export_release.py`, `verify_release.py` et le chargeur backend
-valident actuellement le Random Forest. Ils ne sont pas étendus ici : ne pas
-présenter cet export XGBoost comme une release déployable ni changer `MODEL_PATH`.
-L’API, le frontend et la sélection entre modèles feront l’objet d’une intégration
-commune après les travaux des autres membres.
+```text
+docker run --rm --mount "type=bind,source=.,target=/workspace" cardioscope-ml:dev python -m scripts.export_release --source artifacts/xgboost --version xgb-cleveland-v1
+docker run --rm --mount "type=bind,source=.,target=/workspace" cardioscope-ml:dev python -m scripts.verify_release --release artifacts/releases/xgb-cleveland-v1
+```
+
+L’exporteur reconnaît XGBoost et recalcule les scores test et CV ainsi que les
+scores de chaque pli avant publication atomique. Il vérifie aussi paramètres,
+versions, classes, variables, effectifs et empreintes du dataset et du modèle.
+La release `xgb-cleveland-v1` a été publiée et vérifiée sous Docker/Linux avec
+les scores ci-dessus. Elle ne remplace pas `rf-cleveland-v1`.
+
+Pour reproduire la vérification CV, utiliser le même environnement Linux que
+l’entraînement. Un recalcul sous Windows a produit une moyenne différente et
+a été refusé. Les graines fixées ne garantissent pas l’identité des calculs
+entre plateformes ; ne pas corriger les rapports pour masquer cet écart.
+
+Le backend consulte les fichiers de cette release via `COMPARISON_MODEL_PATHS`
+et `GET /models`. Il vérifie les empreintes mais ne charge pas le pipeline
+XGBoost pour les prédictions. Le frontend propose le tableau comparatif et le
+détail de chaque version. Garder `MODEL_PATH` sur Random Forest ; la sélection
+d’un autre prédicteur n’est pas incluse dans cette intégration.
 
 Sources : [distribution CPU 3.1.2](https://pypi.org/project/xgboost-cpu/3.1.2/),
 [API XGBoost](https://xgboost.readthedocs.io/en/release_3.1.0/python/python_api.html).

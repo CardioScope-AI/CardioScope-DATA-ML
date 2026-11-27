@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "model_version": "xgb-cleveland-v1",
+  "artifact_sha256": "19769cbb5d60d6320b97f8e40e2a3ba069aafdfd9b0f5b86421c47ebfef5b30d",
+  "metadata_sha256": "c36a39b2aa7bd0276980cffd6a01c44570a12dae0afb495fe890b55a7fd6a14c",
+  "test_evaluation_sha256": "3be541b4c7115d9c8613d88092a90f5aedcd1c7fd88043af15b794a43de8900a",
+  "limitations": [
+    "Démonstrateur pédagogique ; ceci ne constitue pas un diagnostic médical.",
+    "Utiliser uniquement des profils fictifs.",
+    "Dataset historique Cleveland de 303 observations ; absence de validation externe démontrée.",
+    "La classe 0 ou 1 ne prédit pas un risque à 5 ou 10 ans ; des erreurs sont possibles.",
+    "Probabilités non calibrées et performances par sous-groupe non établies.",
+    "Le modèle ne se réentraîne pas automatiquement à partir des nouvelles données ou des simulations enregistrées."
+  ]
+}
