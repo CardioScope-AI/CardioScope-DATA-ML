@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "dataset": "Cleveland",
+  "dataset_sha256": "a74b7efa387bc9d108d7d0115d831fe9b414b29ae7124f331b622b4efa0427c8",
+  "split": {
+    "test_size": 0.2,
+    "random_state": 42,
+    "stratify": true,
+    "train_samples": 242,
+    "test_samples": 61
+  },
+  "cross_validation": {
+    "folds": 5,
+    "random_state": 42,
+    "stratified": true,
+    "metrics": {
+      "RandomForestClassifier": {
+        "parameters": {
+          "n_estimators": 100,
+          "random_state": 42
+        },
+        "metrics": {
+          "accuracy": {
+            "mean": 0.8181,
+            "std": 0.0307
+          },
+          "precision": {
+            "mean": 0.8173,
+            "std": 0.0405
+          },
+          "recall": {
+            "mean": 0.7826,
+            "std": 0.0981
+          },
+          "f1": {
+            "mean": 0.7948,
+            "std": 0.0469
+          },
+          "roc_auc": {
+            "mean": 0.8967,
+            "std": 0.028
+          }
+        }
+      },
+      "LogisticRegression": {
+        "parameters": {
+          "C": 1.0,
+          "max_iter": 1000,
+          "random_state": 42
+        },
+        "metrics": {
+          "accuracy": {
+            "mean": 0.8471,
+            "std": 0.01
+          },
+          "precision": {
+            "mean": 0.8768,
+            "std": 0.0542
+          },
+          "recall": {
+            "mean": 0.7834,
+            "std": 0.0459
+          },
+          "f1": {
+            "mean": 0.8245,
+            "std": 0.0069
+          },
+          "roc_auc": {
+            "mean": 0.9025,
+            "std": 0.0144
+          }
+        }
+      }
+    }
+  },
+  "test_set_used_for_comparison": false
+}
