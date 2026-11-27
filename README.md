@@ -57,6 +57,24 @@ docker run --rm --mount "type=bind,source=.,target=/workspace" cardioscope-ml:de
 ```
 Compose monte le dossier `artifacts` en lecture seule dans le backend à `/models`; redémarrer le backend après export. Ne pas charger de fichier joblib non fiable.
 
+## Comparaison Random Forest et régression logistique
+
+`scripts/compare_models.py` compare les deux classifieurs sur les mêmes plis de
+validation croisée stratifiée, à partir des 242 profils d'entraînement. Le
+prétraitement est appris à l'intérieur de chaque pli. La régression logistique
+impute et standardise les variables numériques, impute et encode les catégories,
+puis utilise `LogisticRegression(max_iter=1000, random_state=42)`. Les moyennes
+et écarts-types d'accuracy, précision, rappel, F1 et ROC-AUC sont enregistrés dans
+`artifacts/model_comparison.json`.
+
+Le test réservé de 61 profils n'est pas utilisé pour cette comparaison ni pour
+choisir le modèle. Le script ne remplace et ne réentraîne pas l'artefact Random
+Forest chargé par le backend. Pour lancer la comparaison dans Docker :
+
+```text
+docker run --rm --mount "type=bind,source=.,target=/workspace" cardioscope-ml:dev python scripts/compare_models.py
+```
+
 ## Audit des données et Définition de la cible (Carte 02)
 
 - **Source** : UCI Machine Learning Repository - Heart Disease (Cleveland). Fichier brut `processed.cleveland.data` (récupéré le 11/11/2026).
