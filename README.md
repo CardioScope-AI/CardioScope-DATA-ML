@@ -2,6 +2,13 @@
 
 Dataset, préparation des données, entraînement et évaluation du futur modèle. Le notebook charge les données locales et prépare la séparation. Le pipeline est construit séparément dans `scripts/pipeline.py`. Aucun entraînement ni téléchargement ne se déclenche automatiquement.
 
+## Expérience XGBoost
+
+Le [guide XGBoost](docs/xgboost.md) décrit l’entraînement et l’évaluation séparés :
+`python -m scripts.train_xgboost`. Les exports sont écrits dans `artifacts/xgboost/`.
+Le Random Forest et sa release restent inchangés ; aucun modèle XGBoost n’est
+automatiquement déployé dans le backend.
+
 ## Releases du modèle (DATA-ML #22)
 
 La commande `python -m scripts.export_release --version rf-cleveland-v1` vérifie
