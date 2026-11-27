@@ -13,7 +13,10 @@ import scipy
 import sklearn
 from sklearn.model_selection import StratifiedKFold, cross_validate, train_test_split
 
-from pipeline import build_pipeline
+if __package__:
+    from .pipeline import build_pipeline
+else:
+    from pipeline import build_pipeline
 
 
 # Chemins du projet et du dataset Cleveland

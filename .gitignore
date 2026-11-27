@@ -4,6 +4,7 @@ __pycache__/
 .env
 .ipynb_checkpoints/
 artifacts/*.joblib
+artifacts/**/*.joblib
 artifacts/releases/*/*.joblib
 artifacts/releases/.release-*/
 artifacts/releases/.*.lock
