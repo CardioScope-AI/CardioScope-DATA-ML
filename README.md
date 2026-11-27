@@ -8,6 +8,8 @@ Le [guide XGBoost](docs/xgboost.md) décrit l’entraînement et l’évaluation
 `python -m scripts.train_xgboost`. Les exports sont écrits dans `artifacts/xgboost/`.
 Le Random Forest et sa release restent inchangés ; aucun modèle XGBoost n’est
 automatiquement déployé dans le backend.
+L’exporteur accepte aussi `--source artifacts/xgboost --version xgb-cleveland-v1`.
+Cette release vérifiée est consultable dans le catalogue API sans servir de prédicteur.
 
 ## Releases du modèle (DATA-ML #22)
 
